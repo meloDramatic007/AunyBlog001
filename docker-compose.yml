@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+
+  server:
+    image: nginx:stable-alpine
+    container_name: meloDramatic007-nginx
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+      - "443:443"
+    volumes:
+      - ./src:/var/www/html:cached
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d
+
+    depends_on:
+      - app
+      - mysql
+    networks:
+      - meloDramatic007-network
+
+  app:
+    build:
+      context: .
+      dockerfile: php.Dockerfile
+    container_name: meloDramatic007-php
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html:cached
+      - ./.docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "5173:5173"
+    networks:
+      - meloDramatic007-network
+
+
+  mysql:
+    image: mysql:8.0
+    container_name: meloDramatic007-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: meloDramatic007-db
+      MYSQL_USER: melo
+      MYSQL_PASSWORD: "strong_password"
+      MYSQL_ROOT_PASSWORD: "strong_password"
+    volumes:
+      - ./.docker/data/mysql-data:/var/lib/mysql
+    networks:
+      - meloDramatic007-network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: meloDramatic007-phpMyAdmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    networks:
+      - meloDramatic007-network
+
+networks:
+  meloDramatic007-network:
+    driver: bridge
